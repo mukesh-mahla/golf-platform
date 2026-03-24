@@ -17,4 +17,14 @@ model User{
   userName String
   email String @unique
   password String
+  scores Score[]
+}
+
+model Score{
+  id String @id @default(cuid())
+  userId String 
+  value Int
+  date DateTime 
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
 }
