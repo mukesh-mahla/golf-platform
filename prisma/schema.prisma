@@ -11,13 +11,24 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+enum Role{
+  USER
+  ADMIN
+}
 
 model User{
   id String @id @default(cuid())
+  role Role @default(USER)
   userName String
   email String @unique
   password String
+  
+  selectedCharityId  String?
+  selectedCharity    Charity?  @relation(fields: [selectedCharityId], references: [id])
+  charityPercentage  Float     @default(10.0) // Enforces the 10% minimum contribution 
+  subscription Subscription?
   scores Score[]
+  winnings           Winning[]
 }
 
 model Score{
@@ -27,4 +38,89 @@ model Score{
   date DateTime 
   createdAt DateTime @default(now())
   user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+}
+
+enum Status {
+  SIMULATION
+  PUBLISHED
+}
+
+model Draw {
+  id        String   @id @default(cuid())
+  number    Int[]
+  status    Status   @default(SIMULATION)
+  createdAt DateTime @default(now())
+  prizePool   PrizePool?
+  winnings    Winning[]
+}
+
+model Charity {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @db.Text // Needed for longer descriptions [cite: 82]
+  imageUrl    String?  // For charity profiles [cite: 82]
+  isFeatured  Boolean  @default(false) // For the spotlight section [cite: 83]
+  
+  users       User[]   // Users who have selected this charity
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PrizePool {
+  id             String   @id @default(cuid())
+  drawId         String   @unique
+  draw           Draw     @relation(fields: [drawId], references: [id])
+  
+  totalAmount    Float    // Total pool calculated from active subs [cite: 71]
+  match5Amount   Float    // 40% of pool 
+  match4Amount   Float    // 35% of pool 
+  match3Amount   Float    // 25% of pool 
+  rolloverAmount Float    @default(0) // Jackpot carries forward if no 5-match 
+}
+
+model Winning {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  drawId      String
+  draw        Draw         @relation(fields: [drawId], references: [id])
+  
+  matchTier   Int          // Will be 3, 4, or 5 
+  amount      Float        // The user's specific cut (split among winners in same tier) [cite: 72]
+  
+  proofUrl    String?      // Screenshot of scores for Admin review 
+  status      PayoutStatus @default(PENDING) // Pending -> Paid flow 
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum PayoutStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum SubscriptionPlan {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  userId     String             @unique
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan       SubscriptionPlan
+  status     SubscriptionStatus @default(ACTIVE)
+  renewalDate DateTime?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
 }

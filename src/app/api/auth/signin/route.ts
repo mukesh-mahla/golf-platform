@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
     
     cookieStore.set("token", token, {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
     });
 

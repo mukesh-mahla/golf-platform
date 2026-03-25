@@ -6,42 +6,49 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import z from "zod";
+import { useRouter } from "next/navigation";
+const SignInformSchema = z.object({
+  email:z.string().email("invalid email"),
+  password:z.string().min(8,"password should be 8 charcter long")
+})
+
+type signInvalue = z.infer<typeof SignInformSchema>
 
 
 
 export default function SigninPage() {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const router = useRouter()
+  const [form, setForm] = useState<signInvalue>({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const[zodError,setZodError] = useState<any>({})
 
-  
-
+ const {mutate,isError,isPending,error} = useMutation({mutationFn:async(payload:signInvalue)=>{
+   const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin`,payload,{withCredentials:true})
+   return res.data
+ },onSuccess:()=>{
+  router.push("/dashboard")
+ }})
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-        credentials:"include"
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Invalid credentials");
-      window.location.href = "/dashboard";
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unexpected error");
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const validation = SignInformSchema.safeParse(form);
+
+  if (!validation.success) {
+    setZodError(validation.error.flatten().fieldErrors);
+    return;
+  }
+  setZodError({});
+    mutate(form)
+   
   };
+
+  
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d1812] px-4">
@@ -67,6 +74,7 @@ export default function SigninPage() {
               value={form.email} onChange={handleChange} required
               className="h-11 bg-white/[0.05] border-white/10 text-white placeholder:text-white/20 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/50 rounded-xl"
             />
+            {zodError.email && <p className="text-red-400">{zodError.email[0]}</p>}
           </div>
 
           <div className="space-y-1.5">
@@ -87,6 +95,7 @@ export default function SigninPage() {
                 required autoComplete="current-password"
                 className="h-11 pr-11 bg-white/[0.05] border-white/10 text-white placeholder:text-white/20 focus-visible:ring-emerald-500/40 focus-visible:border-emerald-500/50 rounded-xl"
               />
+              {zodError.password && <p className="text-red-400">{zodError.password[0]}</p>}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -98,17 +107,17 @@ export default function SigninPage() {
             </div>
           </div>
 
-          {error && (
+          {isError && (
             <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3">
-              {error}
+              {error.message}
             </p>
           )}
 
           <Button
-            type="submit" disabled={loading}
+            type="submit" disabled={isPending}
             className="w-full h-11 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all group mt-2"
           >
-            {loading ? (
+            {isPending ? (
               <span className="flex items-center gap-2">
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Signing in…

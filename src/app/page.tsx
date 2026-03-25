@@ -75,6 +75,11 @@ export default function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 flex items-center justify-between px-6 md:px-12 h-16 border-b border-white/[0.06] bg-[#0d1812]/80 backdrop-blur-md">
         <span className="font-bold text-white tracking-tight">⛳</span>
         <div className="flex items-center gap-3">
+          <Link href="/admin">
+    <Button variant="ghost" size="sm" className="text-white/30 hover:text-white/60 hover:bg-white/5 text-xs">
+      Admin
+    </Button>
+  </Link>
           <Link href="/signin">
             <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/5">
               Sign in
@@ -291,6 +296,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-6">
           <a href="#" className="text-white/20 hover:text-white/50 text-xs transition-colors">Terms</a>
           <a href="#" className="text-white/20 hover:text-white/50 text-xs transition-colors">Privacy</a>
+          <Link href="/admin" className="text-white/20 hover:text-white/50 text-xs transition-colors">Admin</Link>
           <Link href="/signin" className="text-white/20 hover:text-white/50 text-xs transition-colors">Sign in</Link>
         </div>
       </footer>
