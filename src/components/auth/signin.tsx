@@ -11,8 +11,8 @@ import axios from "axios";
 import z from "zod";
 import { useRouter } from "next/navigation";
 const SignInformSchema = z.object({
-  email:z.string().email("invalid email"),
-  password:z.string().min(8,"password should be 8 charcter long")
+  email: z.string().email("invalid email"),
+  password: z.string().min(8, "password should be 8 charcter long")
 })
 
 type signInvalue = z.infer<typeof SignInformSchema>
@@ -23,14 +23,20 @@ export default function SigninPage() {
   const router = useRouter()
   const [form, setForm] = useState<signInvalue>({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const[zodError,setZodError] = useState<any>({})
+  const [zodError, setZodError] = useState<any>({})
 
- const {mutate,isError,isPending,error} = useMutation({mutationFn:async(payload:signInvalue)=>{
-   const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin`,payload,{withCredentials:true})
-   return res.data
- },onSuccess:()=>{
-  router.push("/dashboard")
- }})
+  const { mutate, isError, isPending, error } = useMutation({
+    mutationFn: async (payload: signInvalue) => {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin`, payload, { withCredentials: true })
+      return res.data
+    }, onSuccess: (data) => {
+      if (data.role === "ADMIN") {
+        router.push("/admin")
+      } else {
+        router.push("/dashboard")
+      }
+    }
+  })
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -39,16 +45,16 @@ export default function SigninPage() {
     e.preventDefault()
     const validation = SignInformSchema.safeParse(form);
 
-  if (!validation.success) {
-    setZodError(validation.error.flatten().fieldErrors);
-    return;
-  }
-  setZodError({});
+    if (!validation.success) {
+      setZodError(validation.error.flatten().fieldErrors);
+      return;
+    }
+    setZodError({});
     mutate(form)
-   
+
   };
 
-  
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d1812] px-4">

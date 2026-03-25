@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       select: {
         id: true,
         password: true,
+        role:true
       },
     });
 
@@ -56,12 +57,12 @@ export async function POST(request: NextRequest) {
     cookieStore.set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "strict",
       path: "/",
     });
 
     return NextResponse.json(
-      { message: "Login successful" },
+      { message: "Login successful",role:existingUser.role },
       { status: 200 }
     );
 
